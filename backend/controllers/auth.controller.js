@@ -47,12 +47,12 @@ const login = async (req, res) => {
     const accessToken = jwt.sign(
       { email: foundUser.email, roles },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: '1s' }
+      { expiresIn: '1m' }
     );
     const newRefreshToken = jwt.sign(
       { email: foundUser.email },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: '10s' }
+      { expiresIn: '1d' }
     );
 
     let newRefreshTokenArray = !cookies?.jwt ?
@@ -95,7 +95,7 @@ const logout = async (req, res) => {
 const refresh = async (req, res) => {
   const cookies = req.cookies;
 
-  if (!cookies?.jwt) return res.status(403).json({ message: 'No se recibió un refresh token en la petición.' });
+  if (!cookies?.jwt) return res.sendStatus(403);
 
   const refreshToken = cookies.jwt;
   res.clearCookie('jwt', { httpOnly: true, sameSite: 'None' });
@@ -103,13 +103,13 @@ const refresh = async (req, res) => {
   const foundUser = await User.findOne({ refreshToken });
   if (!foundUser) {
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
-      if (err) return res.status(403).json({ message: 'Se recibió un refresh token vencido que no pertenece a ningún usuario.' });
+      if (err) return res.sendStatus(403);
 
       const hackedUser = await User.findOne({ email: decoded.email });
       hackedUser.refreshToken = [];
       await hackedUser.save();
     });
-    res.status(403).json({ message: 'Se detectó un posible ataque. Por favor, vuelva a iniciar sesión.' });
+    res.sendStatus(403);
   }
 
   const newRefreshTokenArray = foundUser.refreshToken.filter(rt => rt !== refreshToken);
@@ -118,7 +118,7 @@ const refresh = async (req, res) => {
     if (err || decoded.email !== foundUser.email) {
       foundUser.refreshToken = [...newRefreshTokenArray];
       await foundUser.save();
-      return res.status(401).json({ message: 'El refresh token está vencido. Por favor, vuelva a iniciar sesión.' });
+      return res.sendStatus(401);
     }
 
     const roles = Object.values(foundUser.roles);

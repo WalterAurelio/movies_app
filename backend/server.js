@@ -8,6 +8,10 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const connectDatabase = require('./config/dbConnect');
 const authRoutes = require('./routes/api/auth.routes');
+const verifyJWT = require('./middlewares/verifyJWT');
+
+const verifyRoles = require('./middlewares/verifyRoles');
+const { Autor, Editor, User } = require('./config/rolesList');
 
 // Conectar base de datos
 connectDatabase();
@@ -19,6 +23,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+
+app.use(verifyJWT);
+
+app.get('/recurso', verifyRoles(User), (req, res) => {
+  return res.json({ message: 'Hola' });
+})
 
 // Escuchar el puerto determinado
 mongoose.connection.once('open', () => {
