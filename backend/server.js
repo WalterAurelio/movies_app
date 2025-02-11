@@ -9,12 +9,15 @@ const mongoose = require('mongoose');
 const connectDatabase = require('./config/dbConnect');
 const authRoutes = require('./routes/api/auth.routes');
 const verifyJWT = require('./middlewares/verifyJWT');
+const credentials = require('./middlewares/credentials');
 
 const verifyRoles = require('./middlewares/verifyRoles');
 const { Autor, Editor, User } = require('./config/rolesList');
 
 // Conectar base de datos
 connectDatabase();
+
+app.use(credentials);
 
 // Middlewares
 app.use(cors(corsOptions));
